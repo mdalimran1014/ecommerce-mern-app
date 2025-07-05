@@ -25,48 +25,62 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 5000;
 
-connectDB();
-cloudinaryConnect();
+// Better error handling for MongoDB connection
+const startServer = async () => {
+  try {
+    // Connect to MongoDB
+    await connectDB();
+    
+    // Connect to Cloudinary
+    cloudinaryConnect();
+    
+    // CORS configuration for production
+    const corsOptions = {
+      origin: process.env.NODE_ENV === 'production' 
+        ? ['https://your-frontend-domain.com', 'http://localhost:3000'] 
+        : "http://localhost:3000",
+      credentials: true,
+    };
 
-// CORS configuration for production
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com', 'http://localhost:3000'] 
-    : "http://localhost:3000",
-  credentials: true,
+    app.use(cors(corsOptions));
+    app.use(express.json());
+    app.use(cookieParser());
+    app.use(
+      fileUpload({
+        useTempFiles: true,
+        tempFileDir: "/tmp",
+      })
+    );
+
+    // routes
+    app.use("/api/v1/auth", authRoute);
+    app.use("/api/v1/products", productRouter);
+    app.use("/api/v1/profile", profileRoute);
+    app.use("/api/v1/review", ReviewRouter);
+    app.use("/api/v1/cart", cartRouter);
+    app.use("/api/v1/order", orderRouter);
+    app.use("/api/v1/brand", BrandRouter);
+    app.use("/api/v1/category", CategoryRouter);
+
+    app.get("/", (req, res) => {
+      return res.json({
+        success: true,
+        message: "Your server is up and running....",
+      });
+    });
+
+    app.listen(port, () => {
+      console.log(
+        `${chalk.green("✓")} ${chalk.blue(
+          `Server running on port ${port}`
+        )}`
+      );
+    });
+    
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 };
 
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(cookieParser());
-app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: "/tmp",
-  })
-);
-
-// routes
-app.use("/api/v1/auth", authRoute);
-app.use("/api/v1/products", productRouter);
-app.use("/api/v1/profile", profileRoute);
-app.use("/api/v1/review", ReviewRouter);
-app.use("/api/v1/cart", cartRouter);
-app.use("/api/v1/order", orderRouter);
-app.use("/api/v1/brand", BrandRouter);
-app.use("/api/v1/category", CategoryRouter);
-
-app.get("/", (req, res) => {
-  return res.json({
-    success: true,
-    message: "Your server is up and running....",
-  });
-});
-
-app.listen(port, () => {
-  console.log(
-    `${chalk.green("✓")} ${chalk.blue(
-      `Listening on port ${port}. Visit http://localhost:${port}/ in your browser.`
-    )}`
-  );
-});
+startServer();
