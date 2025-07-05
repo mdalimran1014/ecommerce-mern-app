@@ -56,15 +56,6 @@ app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/brand", BrandRouter);
 app.use("/api/v1/category", CategoryRouter);
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-  });
-}
-
 app.get("/", (req, res) => {
   return res.json({
     success: true,
